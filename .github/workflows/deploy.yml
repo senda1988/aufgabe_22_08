@@ -1,0 +1,47 @@
+name: deploy
+
+on: push
+
+jobs:
+    
+
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+
+            - name: checkout
+              uses: actions/checkout@v5
+                
+                
+        
+            - name: ssh setup
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/meinprivatekey
+                chmod 600 ~/.ssh/meinprivatekey
+                ssh-keyscan -H ${{secrets.EC2_IP}} >> ~/.ssh/known_hosts
+
+            - name: Dateien rüberkopieren
+              run: | 
+                ssh -i ~/.ssh/meinprivatekey ubuntu@${{secrets.EC2_IP}} "mkdir -p ~/frontend"
+                scp -i ~/.ssh/meinprivatekey -r ./frontend/* ubuntu@${{secrets.EC2_IP}}:~/frontend/
+
+
+            - name: docker installieren
+              run: |
+                ssh -i ~/.ssh/meinprivatekey ubuntu@${{secrets.EC2_IP}} "
+                sudo apt update &&
+                sudo apt install docker.io -y &&
+                sudo usermod -aG docker ubuntu
+                "
+
+
+            - name: Image auf EC2 bauen 
+              run: |
+                ssh -i ~/.ssh/meinprivatekey ubuntu@${{secrets.EC2_IP}} "
+                cd ~/frontend &&
+                sudo docker build -t frontend-image . &&
+                sudo docker stop frontend-container || true &&
+                sudo docker rm frontend-container || true &&
+                sudo docker run -d --name frontend-container -p 8081:80 frontend-image
+                "
