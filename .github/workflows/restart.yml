@@ -1,0 +1,22 @@
+name: restart
+
+on: workflow_dispatch
+
+jobs:
+    restart:
+        runs-on: ubuntu-latest
+        steps:
+            - name: ssh setup
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/meinprivatekey
+                chmod 600 ~/.ssh/meinprivatekey
+                ssh-keyscan -H ${{secrets.EC2_IP}} >> ~/.ssh/known_hosts
+
+            - name: restart
+              run: |
+                ssh -i ~/.ssh/meinprivatekey ubuntu@${{secrets.EC2_IP}} "
+                docker stop frontend-container || true
+                docker rm frontend-container || true
+                docker run -d --name frontend-container -p 8081:80 frontend-image
+                "
