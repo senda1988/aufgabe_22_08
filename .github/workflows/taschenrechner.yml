@@ -23,4 +23,22 @@ jobs:
               run: |
                   cd testing-example
                   npm test
+
+    deploy:
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - name: checkout
+              uses: actions/checkout@v5
+
+            - name: ssh setup
+              run: |
+                mkdir -p ~/.ssh
+                echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/meinprivatekey
+                chmod 600 ~/.ssh/meinprivatekey
+                ssh-keyscan -H ${{secrets.EC2_IP}} >> ~/.ssh/known_hosts
+
+            - name: Dateien rüberkopieren
+              run: | 
+                scp -i ~/.ssh/meinprivatekey -r ./frontend/* ubuntu@${{secrets.EC2_IP}}:/home/ubuntu
             
