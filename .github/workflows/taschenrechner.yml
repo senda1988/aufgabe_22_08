@@ -40,5 +40,5 @@ jobs:
 
             - name: Dateien rüberkopieren
               run: | 
-                scp -i ~/.ssh/meinprivatekey -r ./frontend/* ubuntu@${{secrets.EC2_IP}}:/home/ubuntu
+                scp -i ~/.ssh/meinprivatekey ./testing-example ubuntu@${{secrets.EC2_IP}}:/home/ubuntu
             
